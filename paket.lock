@@ -1,0 +1,6 @@
+RESTRICTION: == net6.0
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Falco (3.1.12)
+      FSharp.Core (>= 6.0.4)
+    FSharp.Core (6.0.5)
