@@ -1,7 +1,6 @@
 module NeoFarkas.Web
 
 open System
-open System.Reflection
 open System.Threading.Tasks
 
 open Microsoft.AspNetCore.Authorization
@@ -13,6 +12,7 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 
 open Giraffe
+open Microsoft.Extensions.Options
 
 
 type AccessTokenRequirement (token:string) =
@@ -67,14 +67,21 @@ let configureApp (app:IApplicationBuilder) =
 
 let configureServices (services:IServiceCollection) =
     services
+        .AddOptions<Common.NeoFarkasOptions>()
+        .BindConfiguration("NeoFarkas")
+    |> ignore
+
+    services
         .AddHttpContextAccessor()
+        .AddScoped<IAuthorizationHandler, AccessTokenHandler>()
+        .AddHostedService<ApplicationService.MatrixApplicationService>()
+        .AddGiraffe()
         .AddAuthorization(
             fun options ->
+                let nfOptions = services.BuildServiceProvider().GetRequiredService<IOptionsSnapshot<Common.NeoFarkasOptions>>()
                 options.AddPolicy("HasAccessToken",
-                    fun policy -> policy.Requirements.Add(AccessTokenRequirement(Environment.GetEnvironmentVariable("NEOFARKAS_ACCESS_TOKEN"))))
+                    fun policy -> policy.Requirements.Add(AccessTokenRequirement(nfOptions.Value.NeoFarkasAccessToken)))
         )
-        .AddScoped<IAuthorizationHandler, AccessTokenHandler>()
-        .AddGiraffe()
     |> ignore
 
 let configureWebHostBuilder() =
@@ -85,14 +92,3 @@ let configureWebHostBuilder() =
                     .Configure(configureApp)
                     .ConfigureServices(configureServices)
                 |> ignore)
-
-let configureActorHostedService() =
-    { new IHostedService with
-        member this.StartAsync(cancellationToken: Threading.CancellationToken): Task =
-            failwith "Not Implemented"
-        member this.StopAsync(cancellationToken: Threading.CancellationToken): Task =
-            failwith "Not Implemented"
-
-      interface IAsyncDisposable with
-        member this.DisposeAsync() : ValueTask =
-            failwith "Not Implemented" }

@@ -23,3 +23,8 @@ let getVersionDescription () =
                 ThisAssembly.Git.SemVer.Patch
                 ThisAssembly.Git.Commit
                 dirtyVersionMark
+
+type NeoFarkasOptions() =
+    member val NeoFarkasAccessToken = "" with get, set
+    member val NeoFarkasApplicationServiceToken = "" with get, set
+    member val NeoFarkasHomeserverToken = "" with get, set
