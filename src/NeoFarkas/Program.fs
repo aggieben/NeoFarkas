@@ -2,6 +2,7 @@ module NeoFarkas.Program
 
 open System
 open System.Reflection
+open System.Threading.Tasks
 
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
@@ -37,10 +38,24 @@ let getVersionDescription () =
 let accessDenied = RequestErrors.FORBIDDEN "Access Denied"
 let mustHaveAccessToken = authorizeByPolicyName "HasAccessToken" accessDenied
 
+let invitationFormFunc : HttpHandler =
+    handleContext(
+        fun context ->
+            async {
+                let logger = context.GetService<ILogger>()
+                logger.LogTrace("Handling form")
+
+                let! json = context.BindJsonAsync() |> Async.AwaitTask
+
+                context.SetStatusCode 200
+                return Some context
+            } |> Async.StartAsTask)
+
+
 let webApp =
     choose [
         route "/" >=> text $"NeoFarkas {getVersionDescription()} here, reporting for duty."
-        route "/authcheck" >=> mustHaveAccessToken >=> Successful.OK "access token accepted"
+        POST >=> route "/invitation-request" >=> mustHaveAccessToken >=> Successful.OK "access token accepted"
     ]
 
 let configureApp (app:IApplicationBuilder) =
@@ -58,8 +73,7 @@ let configureServices (services:IServiceCollection) =
         .AddGiraffe()
     |> ignore
 
-[<EntryPoint>]
-let main args =
+let configureWebHostBuilder() =
     Host.CreateDefaultBuilder()
         .ConfigureWebHostDefaults(
             fun webHostBuilder ->
@@ -67,6 +81,28 @@ let main args =
                     .Configure(configureApp)
                     .ConfigureServices(configureServices)
                 |> ignore)
-        .Build()
-        .Run()
+
+let configureActorHostedService() =
+    { new IHostedService with
+        member this.StartAsync(cancellationToken: Threading.CancellationToken): Task =
+            failwith "Not Implemented"
+        member this.StopAsync(cancellationToken: Threading.CancellationToken): Task =
+            failwith "Not Implemented"
+
+      interface IAsyncDisposable with
+        member this.DisposeAsync() : ValueTask =
+            failwith "Not Implemented" }
+
+[<EntryPoint>]
+let main args =
+    async {
+        return!
+            [ configureWebHostBuilder()
+                .Build()
+                .RunAsync() ]
+        |> Task.WhenAny
+        |> Async.AwaitTask
+    }
+    |> Async.RunSynchronously
+    |> ignore
     0
