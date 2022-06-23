@@ -20,7 +20,7 @@ let getVersionDescription () =
         sprintf "%s-%s%s" ThisAssembly.Git.Commit ThisAssembly.Git.Branch dirtyVersionMark
     else
         if String.IsNullOrWhiteSpace ThisAssembly.Git.SemVer.DashLabel then
-            sprintf "%s.%s.%s-%s-%s%s"
+            sprintf "%s.%s.%s-%s%s%s"
                 ThisAssembly.Git.SemVer.Major
                 ThisAssembly.Git.SemVer.Minor
                 ThisAssembly.Git.SemVer.Patch
@@ -28,7 +28,7 @@ let getVersionDescription () =
                 ThisAssembly.Git.Commit
                 dirtyVersionMark
         else
-            sprintf "%s.%s.%s-%s%s"
+            sprintf "%s.%s.%s%s%s"
                 ThisAssembly.Git.SemVer.Major
                 ThisAssembly.Git.SemVer.Minor
                 ThisAssembly.Git.SemVer.Patch
