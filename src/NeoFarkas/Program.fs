@@ -45,7 +45,10 @@ let invitationFormFunc : HttpHandler =
                 let logger = context.GetService<ILogger>()
                 logger.LogTrace("Handling form")
 
-                let! json = context.BindJsonAsync() |> Async.AwaitTask
+                use reader = new System.IO.StreamReader(context.Request.Body)
+                let! content = reader.ReadToEndAsync() |> Async.AwaitTask
+
+                logger.LogDebug(sprintf "form content: %A" content)
 
                 context.SetStatusCode 200
                 return Some context
