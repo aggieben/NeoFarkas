@@ -1,7 +1,7 @@
 module NeoFarkas.Web
 
 open System
-open System.Threading.Tasks
+open System.Text.RegularExpressions
 
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
@@ -15,12 +15,12 @@ open Giraffe
 open Microsoft.Extensions.Options
 
 
-type AccessTokenRequirement (token:string) =
+type private AccessTokenRequirement (token:string) =
     interface IAuthorizationRequirement
 
     member _.IsValidAccessToken(presentedToken:string) = token = presentedToken
 
-type AccessTokenHandler (httpContext:IHttpContextAccessor, logger:ILogger<AccessTokenHandler>) =
+type private AccessTokenHandler (httpContext:IHttpContextAccessor, logger:ILogger<AccessTokenHandler>) =
     inherit AuthorizationHandler<AccessTokenRequirement>()
 
     override _.HandleRequirementAsync(context:AuthorizationHandlerContext, requirement:AccessTokenRequirement) =
@@ -78,9 +78,16 @@ let configureServices (services:IServiceCollection) =
         .AddGiraffe()
         .AddAuthorization(
             fun options ->
-                let nfOptions = services.BuildServiceProvider().GetRequiredService<IOptionsSnapshot<Common.NeoFarkasOptions>>()
+                let sp = services.BuildServiceProvider()
+
                 options.AddPolicy("HasAccessToken",
-                    fun policy -> policy.Requirements.Add(AccessTokenRequirement(nfOptions.Value.NeoFarkasAccessToken)))
+                    fun policy ->
+                        let nfOptions = sp.GetRequiredService<IOptionsSnapshot<Common.NeoFarkasOptions>>()
+                        let logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("NeoFarkas.Web")
+                        let token = nfOptions.Value.AccessToken
+                        logger.LogDebug("Configured with neofarkas access token: '{0}'", Regex.Replace(token, ".", "*"))
+
+                        policy.Requirements.Add(AccessTokenRequirement(token)))
         )
     |> ignore
 

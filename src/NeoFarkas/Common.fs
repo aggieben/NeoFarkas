@@ -25,6 +25,6 @@ let getVersionDescription () =
                 dirtyVersionMark
 
 type NeoFarkasOptions() =
-    member val NeoFarkasAccessToken = "" with get, set
-    member val NeoFarkasApplicationServiceToken = "" with get, set
-    member val NeoFarkasHomeserverToken = "" with get, set
+    member val AccessToken = "" with get, set
+    member val ApplicationServiceToken = "" with get, set
+    member val HomeserverToken = "" with get, set
